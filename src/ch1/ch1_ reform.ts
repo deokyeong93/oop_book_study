@@ -1,113 +1,125 @@
 {
   // 자율성 높이기
   class Invitation {
-    constructor(private _when: Date) {}
+    private _when: Date;
+    constructor(when: Date) {
+        this._when = when;
+    }
   }
 
   class Ticket {
-    constructor(private _fee: number) {}
+    private _fee: bigint;
+    constructor(fee: bigint) {
+      this._fee = fee;
+    }
 
-    get fee(): number {
+    get fee(): bigint {
       return this._fee;
     }
   }
 
   class Bag {
-    private _amount: number;
+    private _amount: bigint;
     private _invitation: Invitation;
     private _ticket: Ticket;
-    constructor(amount: number, invitation: Invitation, ticket: Ticket) {
+    constructor(amount: bigint, invitation: Invitation, ticket: Ticket) {
       this._amount = amount;
       this._invitation = invitation;
       this._ticket = ticket;
     }
 
-    plusAmount = (amount: number): void => {
+    plusAmount(amount: bigint): void {
       this._amount += amount;
     };
 
-    private minusAmount = (amount: number): void => {
+    private minusAmount(amount: bigint): void {
       this._amount -= amount;
     };
 
-    private setTicket = (ticket: Ticket): void => {
+    private setTicket(ticket: Ticket): void {
       this._ticket = ticket;
     };
 
-    hold = () => {
-      if (this.hasInvitation) {
-        this.setTicket(this._ticket);
-        return 0;
-      } else {
-        this.minusAmount(this._ticket.fee);
-        this.setTicket(this._ticket);
-        return this._ticket.fee;
-      }
-    };
-
     private get hasInvitation(): boolean {
-      return !!this._invitation;
+      return this._invitation != null;
     }
 
     get hasTicket(): boolean {
-      return !!this._ticket;
+      return this._ticket != null;
     }
+
+    hold(ticket: Ticket) {
+      if (this.hasInvitation) {
+        this.setTicket(ticket);
+      } else {
+        this.setTicket(ticket);
+        this.minusAmount(ticket.fee);
+        return ticket.fee;
+      }
+    };
   }
 
   class Audience {
-    constructor(private _bag: Bag) {}
+    private _bag: Bag;
+    constructor(bag: Bag) {
+      this._bag = bag;
+    }
 
-    buy = (ticket: Ticket): number => {
-      return this._bag.hold();
+    buy(ticket: Ticket): bigint {
+      return this._bag.hold(ticket);
     };
   }
 
   class TicketOffice {
-    constructor(private _amount: number, private _tickets: Array<Ticket>) {}
+    private _amount: bigint;
+    private _tickets: Array<Ticket>;
+    constructor(amount: bigint, tickets: Array<Ticket>) {
+      this._amount = amount;
+      this._tickets = tickets;
+    }
 
     getTicket() {
-      const result = this._tickets[0];
-      this._tickets = this._tickets.filter(
-        (ticket, index: number) => 0 !== index
-      );
+      const result = this._tickets.shift();
       return result;
     }
 
-    minusAmount(amount: number) {
+    minusAmount(amount: bigint) {
       this._amount -= amount;
     }
 
-    plusAmount(amount: number) {
+    plusAmount(amount: bigint) {
       this._amount += amount;
     }
 
-    // sellTicketTo= (audience: Audience) => {
-    // 이렇게 하면 TicketOffice에 대한 응집도, 자율성은 높아지지만
-    // Audience에 대한 의존성이 추가되어 전체적인 관점에서 결합도가 높아진다.
-    // 회의 결과 TicketOffice의 응집도를 낮추고
-    // Tickeseller를 그대로 두어 전체적인 결합도를 낮추기로 하였다.
-    //    const ticket: Ticket = this.getTicket();
-    //     this.plusAmount(audience.buy(ticket))
-    // }
+    sellTicketTo(audience: Audience): void {
+      this.plusAmount(audience.buy(this.getTicket()))
+    }
+
   }
 
   class TicketSeller {
-    constructor(private _ticketOffice: TicketOffice) {}
+    private _ticketOffice: TicketOffice;
+    constructor(ticketOffice: TicketOffice) {
+      this._ticketOffice = ticketOffice;
+    }
 
-    // sellTo = (audience:Audience) => {
-    //     this._ticketOffice.sellTicketTo(audience)
-    // }
+//    sellTo(audience: Audience):void {
+//      const ticket: Ticket = this._ticketOffice.getTicket();
+//      this._ticketOffice.plusAmount(audience.buy(ticket));
+//    };
 
-    sellTo = (audience: Audience) => {
-      const ticket: Ticket = this._ticketOffice.getTicket();
-      this._ticketOffice.plusAmount(audience.buy(ticket));
-    };
+    sellTo(audience: Audience): void {
+      this._ticketOffice.sellTicketTo(audience);
+    }
   }
 
   class Theater {
-    constructor(private _ticketSeller: TicketSeller) {}
+    private _ticketSeller: TicketSeller
+    constructor(ticketSeller: TicketSeller) {
+      this._ticketSeller = ticketSeller;
+    }
 
-    enter = (audience: Audience) => {
+    enter(audience: Audience): void{
       this._ticketSeller.sellTo(audience);
     };
   }
