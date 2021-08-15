@@ -17,7 +17,7 @@
   // (작성자도 해보긴 했다..)
 
   class Reservation {
-    private _cutomer: Customer;
+    private _customer: Customer;
     private _screening: Screening;
     private _fee: Money;
     private _audienceCount: number;
@@ -28,7 +28,7 @@
       fee: Money,
       audienceCount: number
     ) {
-      this._cutomer = customer;
+      this._customer = customer;
       this._screening = screening;
       this._fee = fee;
       this._audienceCount = audienceCount;
@@ -47,21 +47,32 @@
     private _movie: Movie;
     private _sequence: number;
     private _whenScreened: Date;
+
     constructor(movie: Movie, sequence: number, whenScreened: Date) {
       this._movie = movie;
       this._sequence = sequence;
       this._whenScreened = whenScreened;
     }
 
-    private calculateFee() {}
+    private calculateFee(audienceCount: number): Money {
+      return this._movie.calculateMovieFee(this).times(audienceCount);
+    }
 
-    getStartTime() {}
+    get startTime():Date {
+      return this._whenScreened;
+    }
 
-    isSequence() {}
+    isSequence(sequence: number):Boolean {
+      return this._sequence === sequence
+    }
 
-    getMovieFee() {}
+    get movieFee():Money {
+      return this._movie.Fee
+    }
 
-    reserve() {}
+    reserve(customer: Customer, audienceCount: number):Reservation {
+      return new Reservation(customer, this, this.calculateFee(audienceCount), audienceCount);
+    }
   }
 
   class Movie {
@@ -82,35 +93,57 @@
       this._discountPolicy = discountPolicy;
     }
 
-    getFee() {}
+    get Fee():Money {
+      return this._fee
+    }
+    
+    calculateMovieFee = (screening: Screening) => {
+      if (!this._discountPolicy) {
+        return this.Fee;
+      }
 
-    calculateMovieFee() {}
+      return this._fee.minus(this._discountPolicy.calculateDiscountAmount(screening));
+    }
   }
 
   class Money {
-    // reform.ts 에 어울리는 클래스
-    static readonly ZERO = Money.wons(0);
-
-    constructor(private readonly _amount: number) {
+    static readonly ZERO = Money.wons(BigInt(0));
+    
+    constructor(private _amount: bigint) {}
       // BigDecimal는 숫자와 관련된 JAVA의 클래스 타입(참조 타입)이다
       // 또한 JAVA는 long, short ... 숫자와 관련된 타입이 많지만
       // JS는 number 타입 밖에 없고 prototype에 add같은 것이 없기 때문에
       // 따로 BigDecimal class를 구현해야 책과 같은 식의 타입 설정이 가능
       // 우선은 number로도 충분히 구현이 가능한 상황이라 따로 구현하지 않았으나
       // 하나 만들어봐도 나쁘지 않을 것 같다.
+    
+    static wons(amount: bigint) {
+      return new Money(amount)
     }
 
-    static wons() {}
+    get amount():bigint {
+      return this._amount;
+    }
 
-    plus() {}
+    plus = (amount: bigint): Money => {
+      return new Money(this._amount + amount);
+    }
 
-    minus() {}
+    minus = (amount: bigint): Money => {
+      return new Money(this._amount - amount)
+    }
 
-    times() {}
+    times = (percent: number): Money => {
+      return new Money(this._amount * BigInt(percent))
+    }
 
-    isLessThen() {}
+    isLessThan = (other: Money): boolean => {
+      return this._amount < other.amount
+    }
 
-    isGreaterThenOrEqual() {}
+    isGreaterThanOrEqual = (other: Money): boolean => {
+      return this._amount >= other.amount
+    }
   }
 
   abstract class DiscountPolicy {
@@ -120,22 +153,29 @@
       this._conditions = [...conditions];
     }
 
-    calculateDiscountAmount() {}
+    calculateDiscountAmount(screening: Screening): Money {
+      this._conditions.map(item => {
+        if (item.isSatisfiedBy(screening)) {
+          return this.getDiscountAmount(screening)
+        }
+        return Money.ZERO;
+      })
+    }
 
-    abstract getDiscountAmount();
+    abstract getDiscountAmount(sereening: Screening): Money
   }
 
   class AmountDiscountPolicy extends DiscountPolicy {
     private _discountAmount: Money;
-    constructor(
-      discountAmount: Money,
-      ...conditions: Array<DiscountCondition>
-    ) {
+    
+    constructor (discountAmount: Money, conditions: Array<DiscountCondition>) {
       super(conditions);
       this._discountAmount = discountAmount;
     }
-
-    getDiscountAmount() {}
+    
+    getDiscountAmount(screening: Screening):Money {
+      return this._discountAmount;
+    }
   }
 
   class PercentDiscountPolicy extends DiscountPolicy {
@@ -146,21 +186,31 @@
       this._percent = percent;
     }
 
-    getDiscountAmount() {}
+    getDiscountAmount(screening: Screening):Money {
+      return screening.movieFee.times(this._percent);
+    }
   }
 
   class NoneDiscountPolicy extends DiscountPolicy {
-    getDiscountAmount() {}
+    getDiscountAmount(screening: Screening):Money {
+      return Money.ZERO;
+    }
   }
 
   interface DiscountCondition {
-    isSatisfiedBy: (screening: Screening) => boolean;
+    isSatisfiedBy(screening: Screening): Boolean;
   }
 
   class SequenceCondition implements DiscountCondition {
     constructor(private _sequence: number) {}
 
-    isSatisfiedBy() {}
+    sequenceConfition(sequence: number) {
+      this._sequence = sequence;
+    }
+
+    isSatisfiedBy(screening: Screening):Boolean {
+      return screening.isSequence(this._sequence);
+    }
   }
 
   class PeriodCondition implements DiscountCondition {
@@ -174,6 +224,9 @@
       this._endTime = endTime;
     }
 
-    isSatisfiedBy() {}
+    isSatisfiedBy(screening: Screening):Boolean {
+      const { startTime } = screening;
+      return (startTime.getDay() === this._dayOfWeek) && (this._startTime <= startTime.getTime()) && (this._endTime >= startTime.getTime())
+    }
   }
 }
