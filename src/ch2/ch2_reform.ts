@@ -86,13 +86,17 @@
       this._conditions = [...conditions];
     }
 
-    calculateDiscountAmount(screening: Screening): any {
-      this._conditions.map(item => {
-        if (item.isSatisfiedBy(screening)) {
-          return this.getDiscountAmount(screening)
-        }
+    calculateDiscountAmount(screening: Screening): Money {
+      let conditions = [];
+      this._conditions
+        .filter(condition => condition.isSatisfiedBy(screening))
+        .forEach(condition => conditions.push(condition))
+
+      if (conditions.length) {
+        return this.getDiscountAmount(screening)
+      } else {
         return Money.ZERO;
-      })
+      }
     }
 
     abstract getDiscountAmount(sereening: Screening): Money
