@@ -5,7 +5,12 @@
     private _fee: Money;
     private _audienceCount: number;
 
-    constructor(customer: Customer, screening: Screening, fee: Money, audienceCount: number) {
+    constructor(
+      customer: Customer,
+      screening: Screening,
+      fee: Money,
+      audienceCount: number
+    ) {
       this._customer = customer;
       this._screening = screening;
       this._fee = fee;
@@ -24,24 +29,29 @@
       this._whenScreened = whenScreened;
     }
 
-    get startTime():Date {
+    get startTime(): Date {
       return this._whenScreened;
     }
 
-    isSequence(sequence: number):Boolean {
-      return this._sequence === sequence
+    isSequence(sequence: number): Boolean {
+      return this._sequence === sequence;
     }
 
-    get movieFee():Money {
-      return this._movie.Fee
+    get movieFee(): Money {
+      return this._movie.fee;
     }
 
     private calculateFee(audienceCount: number): Money {
       return this._movie.calculateMovieFee(this).times(audienceCount);
     }
 
-    reserve(customer: Customer, audienceCount: number):Reservation {
-      return new Reservation(customer, this, this.calculateFee(audienceCount), audienceCount);
+    reserve(customer: Customer, audienceCount: number): Reservation {
+      return new Reservation(
+        customer,
+        this,
+        this.calculateFee(audienceCount),
+        audienceCount
+      );
     }
   }
 
@@ -51,26 +61,33 @@
     private _fee: Money;
     private _discountPolicy: DiscountPolicy;
 
-    constructor(title: string, runningTime: number, fee: Money, discountPolicy: DiscountPolicy) {
+    constructor(
+      title: string,
+      runningTime: number,
+      fee: Money,
+      discountPolicy: DiscountPolicy
+    ) {
       this._title = title;
       this._runningTime = runningTime;
       this._fee = fee;
       this._discountPolicy = discountPolicy;
     }
 
-    get Fee():Money {
-      return this._fee
+    get fee(): Money {
+      return this._fee;
     }
-    
+
     calculateMovieFee = (screening: Screening) => {
       if (!this._discountPolicy) {
-        return this.Fee;
+        return this.fee;
       }
 
-      return this._fee.minus(this._discountPolicy.calculateDiscountAmount(screening));
-    }
+      return this._fee.minus(
+        this._discountPolicy.calculateDiscountAmount(screening)
+      );
+    };
 
-    set discountPolicy (discountPolicy: DiscountPolicy) {
+    set discountPolicy(discountPolicy: DiscountPolicy) {
       this._discountPolicy = discountPolicy;
     }
   }
@@ -89,28 +106,28 @@
     calculateDiscountAmount(screening: Screening): Money {
       let conditions = [];
       this._conditions
-        .filter(condition => condition.isSatisfiedBy(screening))
-        .forEach(condition => conditions.push(condition))
+        .filter((condition) => condition.isSatisfiedBy(screening))
+        .forEach((condition) => conditions.push(condition));
 
       if (conditions.length) {
-        return this.getDiscountAmount(screening)
+        return this.getDiscountAmount(screening);
       } else {
         return Money.ZERO;
       }
     }
 
-    abstract getDiscountAmount(sereening: Screening): Money
+    abstract getDiscountAmount(sereening: Screening): Money;
   }
 
   class AmountDiscountPolicy extends DefaultDiscountPolicy {
     private _discountAmount: Money;
-    
-    constructor (discountAmount: Money, conditions: Array<DiscountCondition>) {
+
+    constructor(discountAmount: Money, conditions: Array<DiscountCondition>) {
       super(conditions);
       this._discountAmount = discountAmount;
     }
-    
-    getDiscountAmount(screening: Screening):Money {
+
+    getDiscountAmount(screening: Screening): Money {
       return this._discountAmount;
     }
   }
@@ -123,7 +140,7 @@
       this._percent = percent;
     }
 
-    getDiscountAmount(screening: Screening):Money {
+    getDiscountAmount(screening: Screening): Money {
       return screening.movieFee.times(this._percent);
     }
   }
@@ -145,7 +162,7 @@
       this._sequence = sequence;
     }
 
-    isSatisfiedBy(screening: Screening):Boolean {
+    isSatisfiedBy(screening: Screening): Boolean {
       return screening.isSequence(this._sequence);
     }
   }
@@ -161,44 +178,48 @@
       this._endTime = endTime;
     }
 
-    isSatisfiedBy(screening: Screening):Boolean {
+    isSatisfiedBy(screening: Screening): Boolean {
       const { startTime } = screening;
-      return (startTime.getDay() === this._dayOfWeek) && (this._startTime <= startTime.getTime()) && (this._endTime >= startTime.getTime())
+      return (
+        startTime.getDay() === this._dayOfWeek &&
+        this._startTime <= startTime.getTime() &&
+        this._endTime >= startTime.getTime()
+      );
     }
   }
 
   class Money {
-    static readonly ZERO = Money.wons(BigInt(0));
-    
-    constructor(private _amount: bigint) {}
+    static readonly ZERO = Money.wons(0);
 
-    static wons(amount: bigint) {
-      return new Money(amount)
+    constructor(private _amount: number) {}
+
+    static wons(amount: number) {
+      return new Money(amount);
     }
 
-    get amount():bigint {
+    get amount(): number {
       return this._amount;
     }
 
-    plus = (amount: bigint): Money => {
+    plus = (amount: number): Money => {
       return new Money(this._amount + amount);
-    }
+    };
 
     minus = (amount: any): Money => {
-      return new Money(this._amount - amount)
-    }
+      return new Money(this._amount - amount);
+    };
 
     times = (percent: number): Money => {
-      return new Money(this._amount * BigInt(percent))
-    }
+      return new Money(this._amount * percent);
+    };
 
     isLessThan = (other: Money): boolean => {
-      return this._amount < other.amount
-    }
+      return this._amount < other.amount;
+    };
 
     isGreaterThanOrEqual = (other: Money): boolean => {
-      return this._amount >= other.amount
-    }
+      return this._amount >= other.amount;
+    };
   }
 
   class Customer {
@@ -208,5 +229,4 @@
       private _age: number
     ) {}
   }
-
 }
