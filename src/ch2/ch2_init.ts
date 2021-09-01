@@ -55,11 +55,11 @@
 
     private calculateFee() {}
 
-    getStartTime() {}
+    get startTime() {}
 
     isSequence() {}
 
-    getMovieFee() {}
+    get movieFee() {}
 
     reserve() {}
   }
@@ -82,7 +82,7 @@
       this._discountPolicy = discountPolicy;
     }
 
-    getFee() {}
+    get fee() {}
 
     calculateMovieFee() {}
   }
