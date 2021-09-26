@@ -22,3 +22,4 @@
 - ch7. 정리 생략
 - ch8. 내용 요약 : localhost
 - ch9. 내용 요약 : deokyeong93
+- ch10. 내용 요약 : uriyang
